@@ -1,4 +1,5 @@
 import Chart from "@/components/dashboard/Chart";
+import ThemeSwitch from "@/components/header/ThemeSwitch";
 
 export default function Home() {
   return (

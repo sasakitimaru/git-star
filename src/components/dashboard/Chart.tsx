@@ -3,8 +3,9 @@
 import React from "react";
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import dynamic from "next/dynamic";
-const LineChart = dynamic(() =>
-  import("recharts").then((mod) => mod.LineChart)
+const LineChart = dynamic(
+  () => import("recharts").then((mod) => mod.LineChart),
+  { ssr: false }
 );
 
 const data = [
