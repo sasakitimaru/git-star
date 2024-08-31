@@ -13,14 +13,33 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function Component({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2022, 0, 20),
-    to: addDays(new Date(2022, 0, 20), 20),
-  });
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+  const handleSelectDateRange = (date?: DateRange) => {
+    if (!date?.from) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("from", date.from.toLocaleDateString());
+    const today = new Date();
+    params.set(
+      "to",
+      date.to?.toLocaleDateString() ?? today.toLocaleDateString()
+    );
+
+    replace(`${pathname}?${params.toString()}`);
+  };
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  const date = {
+    from: from ? new Date(from) : undefined,
+    to: to ? new Date(to) : undefined,
+  };
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -55,7 +74,7 @@ export default function Component({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={(date) => handleSelectDateRange(date)}
             numberOfMonths={2}
           />
         </PopoverContent>
