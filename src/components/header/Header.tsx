@@ -1,6 +1,6 @@
 "use client";
 
-import ThemeSwitch from "./ThemeSwitch";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   return (
@@ -10,7 +10,7 @@ export default function Header() {
           <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
             Git Star
           </div>
-          <ThemeSwitch />
+          <ThemeToggle />
         </div>
       </nav>
     </header>

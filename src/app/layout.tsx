@@ -1,7 +1,7 @@
 import { Inter as FontSans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Provider } from "@/app/theme-provider";
 import "./globals.css";
 import Header from "@/components/header/Header";
 
@@ -23,10 +23,12 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Header />
-          {children}
-        </ThemeProvider>
+        <Provider>
+          <>
+            <Header />
+            {children}
+          </>
+        </Provider>
       </body>
     </html>
   );
