@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
@@ -22,15 +22,19 @@ export default function Component({
   const pathname = usePathname();
   const { replace } = useRouter();
   const handleSelectDateRange = (date?: DateRange) => {
-    if (!date?.from) return;
-
     const params = new URLSearchParams(searchParams.toString());
-    params.set("from", date.from.toLocaleDateString());
-    const today = new Date();
-    params.set(
-      "to",
-      date.to?.toLocaleDateString() ?? today.toLocaleDateString()
-    );
+
+    if (date?.from) {
+      params.set("from", date.from.toLocaleDateString());
+      const today = new Date();
+      params.set(
+        "to",
+        date.to?.toLocaleDateString() ?? today.toLocaleDateString()
+      );
+    } else {
+      params.delete("from");
+      params.delete("to");
+    }
 
     replace(`${pathname}?${params.toString()}`);
   };
