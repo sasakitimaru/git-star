@@ -34,36 +34,34 @@ const chartConfig = {
 
 export default function Component() {
   return (
-    <Card className="w-full xl:w-4/5 pr-2 md:pr-8 py-4 md:py-8">
-      <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-        <LineChart accessibilityLayer data={chartData}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="month"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            tickFormatter={(value) => value.slice(0, 3)}
-          />
-          <YAxis />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <ChartLegend content={<ChartLegendContent />} />
-          <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-          <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
-          <Line
-            type="monotone"
-            dataKey="desktop"
-            stroke="var(--color-desktop)"
-            strokeWidth={2}
-          />
-          <Line
-            type="monotone"
-            dataKey="mobile"
-            stroke="var(--color-mobile)"
-            strokeWidth={2}
-          />
-        </LineChart>
-      </ChartContainer>
-    </Card>
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+      <LineChart accessibilityLayer data={chartData}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          tickMargin={10}
+          axisLine={false}
+          tickFormatter={(value) => value.slice(0, 3)}
+        />
+        <YAxis />
+        <ChartTooltip content={<ChartTooltipContent />} />
+        <ChartLegend content={<ChartLegendContent />} />
+        <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
+        <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
+        <Line
+          type="monotone"
+          dataKey="desktop"
+          stroke="var(--color-desktop)"
+          strokeWidth={2}
+        />
+        <Line
+          type="monotone"
+          dataKey="mobile"
+          stroke="var(--color-mobile)"
+          strokeWidth={2}
+        />
+      </LineChart>
+    </ChartContainer>
   );
 }
