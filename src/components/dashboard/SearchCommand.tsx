@@ -10,49 +10,25 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import React, { Suspense } from "react";
+import React from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { Checkbox } from "../ui/checkbox";
-import { LoaderCircle } from "lucide-react";
 import { Spinner } from "../ui/spinner";
-
-const repositories = [
-  "react",
-  "vue",
-  "angular",
-  "svelte",
-  "preact",
-  "next",
-  "nuxt",
-  "nest",
-  "express",
-  "fastify",
-  "koa",
-  "hapi",
-  "sails",
-  "loopback",
-];
+import { ErrorBoundary } from "next/dist/client/components/error-boundary";
+import { fetchRepositories } from "@/api/dashboard/actions";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const RepoSuggestions = ({ query }: { query: string }) => {
-  const [checkedRepos, setCheckedRepos] = React.useState<string[]>([]);
-  const searchedRepositories = repositories.filter(
-    (repo) => query && repo.includes(query) && !checkedRepos.includes(repo)
-  );
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+  const checkedRepos = params.getAll("repos");
+
   return (
     <CommandGroup heading="Suggestions">
       {checkedRepos.map((repo) => (
-        <RepoCommandItem
-          key={repo}
-          repo={repo}
-          checkedRepos={checkedRepos}
-          setCheckedRepos={setCheckedRepos}
-        />
+        <RepoCommandItem key={repo} repo={repo} defaultChecked />
       ))}
-      <SearchedRepoItems
-        query={query}
-        checkedRepos={checkedRepos}
-        setCheckedRepos={setCheckedRepos}
-      />
+      <SearchedRepoItems query={query} checkedRepos={checkedRepos} />
     </CommandGroup>
   );
 };
@@ -60,55 +36,75 @@ const RepoSuggestions = ({ query }: { query: string }) => {
 const SearchedRepoItems = ({
   query,
   checkedRepos,
-  setCheckedRepos,
 }: {
   query: string;
   checkedRepos: string[];
-  setCheckedRepos: React.Dispatch<React.SetStateAction<string[]>>;
 }) => {
-  const searchedRepositories = repositories.filter(
-    (repo) => query && repo.includes(query) && !checkedRepos.includes(repo)
-  );
-  return (
-    <Suspense fallback={<Spinner />}>
-      {searchedRepositories.map((repo) => (
-        <RepoCommandItem
-          key={repo}
-          repo={repo}
-          checkedRepos={checkedRepos}
-          setCheckedRepos={setCheckedRepos}
-        />
-      ))}
-    </Suspense>
-  );
+  const [repositories, setRepositories] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!query || query.length < 3) {
+      setRepositories([]);
+      return;
+    }
+
+    const updateSearchParams = async () => {
+      setLoading(true);
+      const res = await fetchRepositories(query);
+      const repos = res.data.items.map((item: any) => item.full_name);
+      setRepositories(repos);
+      setLoading(false);
+    };
+    updateSearchParams();
+  }, [query]);
+
+  if (loading) {
+    return (
+      <CommandItem className="flex justify-center p-2">
+        <Spinner />
+      </CommandItem>
+    );
+  }
+
+  return repositories
+    .filter((repo) => !checkedRepos.includes(repo))
+    .map((repo) => <RepoCommandItem key={repo} repo={repo} />);
 };
 
 const RepoCommandItem = ({
   repo,
-  checkedRepos,
-  setCheckedRepos,
+  defaultChecked = false,
 }: {
   repo: string;
-  checkedRepos: string[];
-  setCheckedRepos: React.Dispatch<React.SetStateAction<string[]>>;
-}) => (
-  <CommandItem key={repo} className="gap-1">
-    <Checkbox
-      defaultChecked={checkedRepos.includes(repo)}
-      onCheckedChange={() => {
-        setCheckedRepos((prev) => {
-          if (prev.includes(repo)) {
-            return prev.filter((r) => r !== repo);
-          }
-          return [...prev, repo];
-        });
-      }}
-      id={repo}
-      className="my-auto"
-    />
-    <span>{repo}</span>
-  </CommandItem>
-);
+  defaultChecked?: boolean;
+}) => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  const handleOnCheckedChange = (checked: boolean | "indeterminate") => {
+    if (checked === "indeterminate") return;
+
+    const params = new URLSearchParams(searchParams);
+    checked
+      ? params.append("repos", repo)
+      : params.delete("repos", encodeURI(repo));
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  return (
+    <CommandItem key={repo} className="gap-1">
+      <Checkbox
+        defaultChecked={defaultChecked}
+        onCheckedChange={(e) => handleOnCheckedChange(e)}
+        id={repo}
+        className="my-auto"
+      />
+      <span>{repo}</span>
+    </CommandItem>
+  );
+};
 
 export default function Component() {
   const [query, setQuery] = React.useState("");
@@ -125,7 +121,17 @@ export default function Component() {
       />
       <CommandList className="">
         <CommandEmpty>No results found.</CommandEmpty>
-        <RepoSuggestions query={query} />
+        <ErrorBoundary
+          errorComponent={(e) => {
+            return (
+              <div className="flex justify-center p-2">
+                <span>Error: {e.error.message}</span>
+              </div>
+            );
+          }}
+        >
+          <RepoSuggestions query={query} />
+        </ErrorBoundary>
         <CommandSeparator />
       </CommandList>
     </Command>
