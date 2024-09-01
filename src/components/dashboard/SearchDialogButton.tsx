@@ -1,5 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import SearchCommand from "./SearchCommand";
 import { SearchIcon } from "lucide-react";
 
@@ -15,7 +20,8 @@ export default function Component() {
           Search Repositories
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent aria-describedby="search-repositories">
+        <DialogTitle>Search Repositories</DialogTitle>
         <SearchCommand />
       </DialogContent>
     </Dialog>
