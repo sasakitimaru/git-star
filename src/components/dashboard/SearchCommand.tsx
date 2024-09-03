@@ -52,7 +52,7 @@ const SearchedRepoItems = ({
     const updateSearchParams = async () => {
       setLoading(true);
       const res = await fetchRepositories(query);
-      const repos = res.data.items.map((item: any) => item.full_name);
+      const repos = res.items.map((item: any) => item.full_name);
       setRepositories(repos);
       setLoading(false);
     };

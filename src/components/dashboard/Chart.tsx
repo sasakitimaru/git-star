@@ -10,79 +10,129 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import React from "react";
+import React, { Fragment } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchStars } from "@/api/dashboard/actions";
+import { fetchRepoStarRecords } from "@/api/dashboard/actions";
+import { Skeleton } from "../ui/skeleton";
 
-const chartData = [
-  { month: "Jan", desktop: 4000, mobile: 2400 },
-  { month: "Feb", desktop: 3000, mobile: 1398 },
-  { month: "Mar", desktop: 2000, mobile: 9800 },
-  { month: "Apr", desktop: 2780, mobile: 3908 },
-  { month: "May", desktop: 1890, mobile: 4800 },
-  { month: "Jun", desktop: 2390, mobile: 3800 },
-  { month: "Jul", desktop: 3490, mobile: 4300 },
-  { month: "Aug", desktop: 4000, mobile: 2400 },
-  { month: "Sep", desktop: 3000, mobile: 1398 },
-  { month: "Oct", desktop: 2000, mobile: 9800 },
-  { month: "Nov", desktop: 2780, mobile: 3908 },
-  { month: "Dec", desktop: 1890, mobile: 4800 },
-];
+type ChartData = {
+  yearAndMonth: string;
+  [repoName: string]: number | string;
+}[];
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "#2563eb",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "#60a5fa",
-  },
-} satisfies ChartConfig;
+function ChartSkeleton() {
+  return (
+    <div className="p-4">
+      {/* チャートのタイトル部分 */}
+      <Skeleton className="w-1/3 h-6" />
+
+      {/* チャートのメインエリア */}
+      <div className="mt-4 flex flex-col">
+        {/* Y軸のラベル */}
+        <Skeleton className="w-20 h-4" />
+
+        {/* チャート本体 */}
+        <div className="flex-1">
+          <Skeleton className="w-full h-full" />
+        </div>
+      </div>
+
+      {/* X軸のラベル */}
+      <div className="mt-4">
+        <Skeleton className="w-full h-20" />
+      </div>
+    </div>
+  );
+}
 
 export default function Component() {
   const searchParams = useSearchParams();
+  const [chartData, setChartData] = React.useState<ChartData>([]);
+  const [chartConfig, setChartConfig] = React.useState<ChartConfig>();
+  const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
     const params = new URLSearchParams(searchParams);
     const updateSearchParams = async () => {
       const repos = params.getAll("repos");
-      console.log(repos);
-      const data = await Promise.all(repos.map(fetchStars));
-      console.log(data);
+      if (repos.length === 0) {
+        return;
+      }
+
+      setLoading(true);
+      const data = await Promise.all(
+        repos.map((repo) => fetchRepoStarRecords(repo))
+      );
+      const newChartData = data.reduce((acc, item, index) => {
+        const repo = repos[index];
+        item.forEach((record) => {
+          const yearAndMonth = record.date;
+          const existingData = acc.find((data) => data.date === yearAndMonth);
+          if (existingData) {
+            existingData[repo] = record.count;
+          } else {
+            acc.push({
+              yearAndMonth,
+              [repo]: record.count,
+            });
+          }
+        });
+        return acc;
+      }, [] as ChartData);
+
+      setChartData(newChartData);
+      setChartConfig(
+        repos.reduce(
+          (acc, repo, index) => ({
+            ...acc,
+            [repo]: {
+              label: repo,
+              color: `hsl(${(index * 360) / repos.length}, 70%, 50%)`,
+            },
+          }),
+          {} as ChartConfig
+        )
+      );
+      setLoading(false);
     };
     updateSearchParams();
   }, [searchParams]);
 
+  if (loading) {
+    return <ChartSkeleton />;
+  }
+
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <LineChart accessibilityLayer data={chartData}>
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          tickFormatter={(value) => value.slice(0, 3)}
-        />
-        <YAxis />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-        <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
-        <Line
-          type="monotone"
-          dataKey="desktop"
-          stroke="var(--color-desktop)"
-          strokeWidth={2}
-        />
-        <Line
-          type="monotone"
-          dataKey="mobile"
-          stroke="var(--color-mobile)"
-          strokeWidth={2}
-        />
-      </LineChart>
-    </ChartContainer>
+    <>
+      {chartConfig && chartData.length > 0 && (
+        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+          <LineChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="yearAndMonth"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <YAxis />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartLegend content={<ChartLegendContent />} />
+            {Object.keys(chartConfig).map((key) => (
+              <Fragment key={key}>
+                <Bar dataKey={key} fill={chartConfig[key].color} radius={4} />
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={chartConfig[key].color}
+                  strokeWidth={2}
+                />
+              </Fragment>
+            ))}
+          </LineChart>
+        </ChartContainer>
+      )}
+    </>
   );
 }
