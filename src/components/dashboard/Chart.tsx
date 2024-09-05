@@ -63,22 +63,30 @@ export default function Component() {
       const data = await Promise.all(
         repos.map((repo) => fetchRepoStarRecords(repo))
       );
-      const newChartData = data.reduce((acc, item, index) => {
-        const repo = repos[index];
-        item.forEach((record) => {
-          const yearAndMonth = record.date;
-          const existingData = acc.find((data) => data.date === yearAndMonth);
-          if (existingData) {
-            existingData[repo] = record.count;
-          } else {
-            acc.push({
-              yearAndMonth,
-              [repo]: record.count,
-            });
-          }
+      const newChartData = data
+        .reduce((acc, item, index) => {
+          const repo = repos[index];
+          item.forEach((record) => {
+            const yearAndMonth = record.date;
+            const existingDataIndex = acc.findIndex(
+              (data) => data.yearAndMonth === yearAndMonth
+            );
+            if (existingDataIndex !== -1) {
+              acc[existingDataIndex][repo] = record.count;
+            } else {
+              acc.push({
+                yearAndMonth,
+                [repo]: record.count,
+              });
+            }
+          });
+          return acc;
+        }, [] as ChartData)
+        .sort((a, b) => {
+          const dateA = new Date(a.yearAndMonth);
+          const dateB = new Date(b.yearAndMonth);
+          return dateA.getTime() - dateB.getTime();
         });
-        return acc;
-      }, [] as ChartData);
 
       setChartData(newChartData);
       setChartConfig(
@@ -98,7 +106,7 @@ export default function Component() {
     updateSearchParams();
   }, [searchParams]);
 
-  if (loading) {
+  if (true) {
     return <ChartSkeleton />;
   }
 
@@ -110,10 +118,8 @@ export default function Component() {
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="yearAndMonth"
-              tickLine={false}
               tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value) => value.slice(2, 7)}
             />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
@@ -127,6 +133,7 @@ export default function Component() {
                   dataKey={key}
                   stroke={chartConfig[key].color}
                   strokeWidth={2}
+                  connectNulls
                 />
               </Fragment>
             ))}
