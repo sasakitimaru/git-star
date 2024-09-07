@@ -42,7 +42,7 @@ async function fetchRepoStargazersCount(
 export async function fetchRepoStarRecords(
   repo: string,
   token: string = TOKEN,
-  maxRequestAmount: number = 15
+  maxRequestAmount: number = 50
 ): Promise<{ date: string; count: number }[]> {
   const { data, status, headers } = await fetchRepoStargazers(repo, token);
   const headerLink = headers.get("link") || "";
@@ -112,7 +112,7 @@ export async function fetchRepositories(q: string, token: string = TOKEN) {
   const res = await fetch(`${BASE_URL}/search/repositories?q=${q}`, {
     headers: {
       "X-GitHub-Api-Version": "2022-11-28",
-      Authorization: `token ${TOKEN}`,
+      Authorization: `token ${token}`,
     },
   });
   return res.json();

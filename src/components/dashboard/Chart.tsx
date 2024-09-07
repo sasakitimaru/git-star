@@ -3,7 +3,6 @@
 import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import {
-  ChartConfig,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
@@ -12,101 +11,52 @@ import {
 } from "@/components/ui/chart";
 import React, { Fragment } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchRepoStarRecords } from "@/api/dashboard/actions";
 import { Skeleton } from "../ui/skeleton";
-
-type ChartData = {
-  yearAndMonth: string;
-  [repoName: string]: number | string;
-}[];
+import { useChart } from "@/hooks/use-chart";
+import { fetchRepoStarRecords } from "@/api/dashboard/actions";
 
 function ChartSkeleton() {
   return (
-    <div className="p-4">
-      {/* チャートのタイトル部分 */}
-      <Skeleton className="w-1/3 h-6" />
-
-      {/* チャートのメインエリア */}
-      <div className="mt-4 flex flex-col">
-        {/* Y軸のラベル */}
-        <Skeleton className="w-20 h-4" />
-
-        {/* チャート本体 */}
-        <div className="flex-1">
-          <Skeleton className="w-full h-full" />
-        </div>
-      </div>
-
-      {/* X軸のラベル */}
-      <div className="mt-4">
-        <Skeleton className="w-full h-20" />
-      </div>
+    <div className="min-h-[200px] mx-auto p-4 md:p-6 flex items-baseline gap-4 md:gap-8">
+      <Skeleton className="w-full h-16" />
+      <Skeleton className="w-full h-24" />
+      <Skeleton className="w-full h-28" />
+      <Skeleton className="w-full h-36" />
+      <Skeleton className="w-full h-40" />
+      <Skeleton className="w-full h-52" />
+      <Skeleton className="w-full h-52 hidden sm:block" />
+      <Skeleton className="w-full h-56 hidden sm:block" />
+      <Skeleton className="w-full h-72 hidden md:block" />
+      <Skeleton className="w-full h-96 hidden md:block" />
     </div>
   );
 }
 
 export default function Component() {
   const searchParams = useSearchParams();
-  const [chartData, setChartData] = React.useState<ChartData>([]);
-  const [chartConfig, setChartConfig] = React.useState<ChartConfig>();
   const [loading, setLoading] = React.useState(false);
+  const { chartData, chartConfig, initChart, updateChart } = useChart();
 
   React.useEffect(() => {
     const params = new URLSearchParams(searchParams);
     const updateSearchParams = async () => {
       const repos = params.getAll("repos");
       if (repos.length === 0) {
+        initChart();
         return;
       }
-
       setLoading(true);
       const data = await Promise.all(
-        repos.map((repo) => fetchRepoStarRecords(repo))
+        repos.map((repo) => fetchRepoStarRecords(repo)),
       );
-      const newChartData = data
-        .reduce((acc, item, index) => {
-          const repo = repos[index];
-          item.forEach((record) => {
-            const yearAndMonth = record.date;
-            const existingDataIndex = acc.findIndex(
-              (data) => data.yearAndMonth === yearAndMonth
-            );
-            if (existingDataIndex !== -1) {
-              acc[existingDataIndex][repo] = record.count;
-            } else {
-              acc.push({
-                yearAndMonth,
-                [repo]: record.count,
-              });
-            }
-          });
-          return acc;
-        }, [] as ChartData)
-        .sort((a, b) => {
-          const dateA = new Date(a.yearAndMonth);
-          const dateB = new Date(b.yearAndMonth);
-          return dateA.getTime() - dateB.getTime();
-        });
-
-      setChartData(newChartData);
-      setChartConfig(
-        repos.reduce(
-          (acc, repo, index) => ({
-            ...acc,
-            [repo]: {
-              label: repo,
-              color: `hsl(${(index * 360) / repos.length}, 70%, 50%)`,
-            },
-          }),
-          {} as ChartConfig
-        )
-      );
+      updateChart(repos, data);
       setLoading(false);
     };
     updateSearchParams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  if (true) {
+  if (loading) {
     return <ChartSkeleton />;
   }
 
