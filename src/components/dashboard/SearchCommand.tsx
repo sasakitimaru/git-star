@@ -10,7 +10,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import React from "react";
+import React, { Suspense } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { Checkbox } from "../ui/checkbox";
 import { Spinner } from "../ui/spinner";
@@ -26,7 +26,9 @@ const RepoSuggestions = ({ query }: { query: string }) => {
   return (
     <CommandGroup heading="Suggestions">
       {checkedRepos.map((repo) => (
-        <RepoCommandItem key={repo} repo={repo} defaultChecked />
+        <Suspense key={repo}>
+          <RepoCommandItem repo={repo} defaultChecked />
+        </Suspense>
       ))}
       <SearchedRepoItems query={query} checkedRepos={checkedRepos} />
     </CommandGroup>
@@ -69,7 +71,11 @@ const SearchedRepoItems = ({
 
   return repositories
     .filter((repo) => !checkedRepos.includes(repo))
-    .map((repo) => <RepoCommandItem key={repo} repo={repo} />);
+    .map((repo) => (
+      <Suspense key={repo}>
+        <RepoCommandItem key={repo} repo={repo} />
+      </Suspense>
+    ));
 };
 
 const RepoCommandItem = ({
@@ -130,7 +136,9 @@ export default function Component() {
             );
           }}
         >
-          <RepoSuggestions query={query} />
+          <Suspense fallback={<Spinner />}>
+            <RepoSuggestions query={query} />
+          </Suspense>
         </ErrorBoundary>
         <CommandSeparator />
       </CommandList>

@@ -29,7 +29,7 @@ export default function Component({
       const today = new Date();
       params.set(
         "to",
-        date.to?.toLocaleDateString() ?? today.toLocaleDateString()
+        date.to?.toLocaleDateString() ?? today.toLocaleDateString(),
       );
     } else {
       params.delete("from");
@@ -54,7 +54,7 @@ export default function Component({
             variant={"outline"}
             className={cn(
               "w-[300px] justify-start text-left font-normal",
-              !date && "text-muted-foreground"
+              !date && "text-muted-foreground",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
